@@ -63,7 +63,7 @@ public class WorkerClientRestController {
                 .map(e -> new AbstractMap.SimpleEntry<>(LocalDateTime.now(), String.valueOf(e)))
                 .limitRequest(12)
                 .doOnEach(System.out::println)
-//                .doOnEach(e -> resultMap.put(e.get().getKey(), e.get().getValue()))
+                //                .doOnEach(e -> resultMap.put(e.get().getKey(), e.get().getValue()))
                 .onErrorStop();
 
         Flux<AbstractMap.SimpleEntry<LocalDateTime, String>> timeResponse = client.get()
@@ -74,7 +74,7 @@ public class WorkerClientRestController {
                         e.format(DateTimeFormatter.ofPattern("yyyyMMdd-hh:mm:ss.nnnnnnnnn"))))
                 .limitRequest(7)
                 .doOnEach(System.out::println)
-//                .doOnEach(e -> resultMap.put(e.get().getKey(), e.get().getValue()))
+                //                .doOnEach(e -> resultMap.put(e.get().getKey(), e.get().getValue()))
                 .onErrorStop();
 
         randomNumberResponse.subscribe(e -> resultMap.put(e.getKey(), e.getValue()));
@@ -96,7 +96,10 @@ public class WorkerClientRestController {
     @Configuration
     public static class RSocketConfiguration {
 
-        @Bean
+        // just autowire RSocketRequester.Builder and use it to connect to the server, instead of manually
+        // configuring RSocket and RSockerRequester
+        // keeping the code for reference...
+        //@Bean
         public RSocket rSocket() {
             return RSocketFactory.connect()
                     .mimeType("message/x.rsocket.routing.v0", MediaType.APPLICATION_JSON_VALUE)
@@ -106,10 +109,15 @@ public class WorkerClientRestController {
                     .block();
         }
 
-        @Bean
+        //@Bean
         public RSocketRequester rSocketRequester(RSocketStrategies rSocketStrategies) {
             return RSocketRequester.wrap(rSocket(), MimeTypeUtils.APPLICATION_JSON,
                     MimeTypeUtils.parseMimeType("message/x.rsocket.routing.v0"), rSocketStrategies);
+        }
+
+        @Bean
+        public RSocketRequester rSocketRequester(RSocketRequester.Builder rSocketRequesterBuilder) {
+            return rSocketRequesterBuilder.connectTcp("localhost", 7777).block();
         }
     }
 
