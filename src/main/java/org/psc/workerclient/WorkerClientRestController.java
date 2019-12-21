@@ -9,7 +9,6 @@ import org.reactivestreams.Publisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.rsocket.MetadataExtractor;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.rsocket.RSocketStrategies;
 import org.springframework.util.MimeTypeUtils;
@@ -19,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.netty.tcp.TcpClient;
 
+import javax.management.remote.rmi.RMIConnection;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,6 +32,7 @@ import java.util.TreeMap;
 public class WorkerClientRestController {
 
     private final RSocketRequester rSocketRequester;
+    private Flux<BigDecimal> randomDecimals = null;
 
     @GetMapping
     public List<Double> getRandomNumber() {
@@ -84,10 +85,12 @@ public class WorkerClientRestController {
         return resultMap;
     }
 
-    @GetMapping(value = "/randomDecimals", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/randomDecimals", produces = MediaType.APPLICATION_STREAM_JSON_VALUE)
     public Publisher<BigDecimal> getRandomBigDecimals() {
-        return rSocketRequester.route("randomDecimals")
-                .retrieveFlux(BigDecimal.class);
+        if (randomDecimals == null) {
+            randomDecimals = rSocketRequester.route("randomDecimals").retrieveFlux(BigDecimal.class);
+        }
+        return randomDecimals;
     }
 
     @Configuration
